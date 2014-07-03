@@ -10,6 +10,7 @@ using System.Text;
 using System.Web.Hosting;
 using Microsoft.Win32.SafeHandles;
 using NG3.AppServer.Connector;
+using NG3.AppServer.Handler.Encoding;
 using NG3.AppServer.Parse;
 
 namespace NG3.AppServer.Handler
@@ -152,10 +153,22 @@ namespace NG3.AppServer.Handler
 
                 _headersSent = true;
             }
+
+            byte[] bodyBytes;
+            long bodyLen = 0;
             foreach (byte[] bytes in _responseBodyBytes)
             {
-                _iocpChannelConnector.WriteBody(_reRequestInfo.AcceptSocket, bytes, 0, bytes.Length);
+                bodyLen += bytes.Length;
             }
+            bodyBytes = new byte[bodyLen];
+            long bodyIndex = 0;
+            foreach (byte[] bytes in _responseBodyBytes)
+            {
+                Array.Copy(bytes,0,bodyBytes,bodyIndex,bytes.Length);
+                bodyIndex += bytes.Length;
+            }
+            byte[] gzipBytes = ResponseParse.EncodingBodyContent(bodyBytes);
+            _iocpChannelConnector.WriteBody(_reRequestInfo.AcceptSocket, gzipBytes, 0, gzipBytes.Length);
 
             _responseBodyBytes = new List<byte[]>();
 
@@ -590,7 +603,7 @@ namespace NG3.AppServer.Handler
 
                 Buffer.BlockCopy(data, 0, bytes, 0, length);
 
-                _responseBodyBytes.Add(ResponseParse.EncodingBodyContent(bytes));
+                _responseBodyBytes.Add(bytes);
             }
         }
 

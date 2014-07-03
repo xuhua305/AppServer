@@ -51,9 +51,13 @@
     <Compile Include="Connector\SocketAsyncEventArgsProxy.cs" />
     <Compile Include="Connector\SocketProxy.cs" />
     <Compile Include="Connector\Token.cs" />
+    <Compile Include="Handler\Encoding\CloseExState.cs" />
     <Compile Include="Handler\Encoding\DeflateEncoding.cs" />
     <Compile Include="Handler\Encoding\GZipEncoding.cs" />
+    <Compile Include="Handler\Encoding\GZipWrapperStream.cs" />
+    <Compile Include="Handler\Encoding\ICloseEx.cs" />
     <Compile Include="Handler\Encoding\IResponseEncoding.cs" />
+    <Compile Include="Handler\Encoding\NclUtilities.cs" />
     <Compile Include="Handler\Encoding\ResponseEncodingFactory.cs" />
     <Compile Include="Handler\Host.cs" />
     <Compile Include="Handler\HostManager.cs" />

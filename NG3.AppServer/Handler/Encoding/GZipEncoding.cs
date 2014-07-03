@@ -12,6 +12,7 @@ namespace NG3.AppServer.Handler.Encoding
         public byte[] EncodingResponse(byte[] inputBytes)
         {
             MemoryStream stream = new MemoryStream();
+            //GZipWrapperStream gZipStream = new GZipWrapperStream(stream, CompressionMode.Compress);
             GZipStream gZipStream = new GZipStream(stream, CompressionMode.Compress);
             gZipStream.Write(inputBytes, 0, inputBytes.Length);
             gZipStream.Close();
