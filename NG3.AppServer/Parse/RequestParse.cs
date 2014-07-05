@@ -126,6 +126,7 @@ namespace NG3.AppServer.Parse
                             break;
                         case "connection":
                             requestInfo.Connection = childSplitArray[1];
+                            requestInfo.IsKeepAlive = requestInfo.Connection.Trim().Equals("keep-alive", StringComparison.OrdinalIgnoreCase);
                             break;
                         case "cookie":
                             requestInfo.Cookie = childSplitArray[1];

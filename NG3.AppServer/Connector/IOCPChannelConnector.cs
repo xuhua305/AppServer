@@ -201,7 +201,7 @@ namespace NG3.AppServer.Connector
                         {
                             ReceiveCompleted(null, new ReceiveCompleteEventArgs(token));
                         }
-
+                        this.CloseClientSocket(e);
                     }
                     else if (!s.ReceiveAsync(e))
                     {

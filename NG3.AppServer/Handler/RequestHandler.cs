@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Web.Hosting;
 using Microsoft.Win32.SafeHandles;
@@ -126,10 +127,30 @@ namespace NG3.AppServer.Handler
                 }
             }
 
-            _iocpChannelConnector.WriteEntireResponseFromString(_reRequestInfo.AcceptSocket, 200, "Content-type: text/html; charset=utf-8\r\n",
-                                                      Messages.FormatDirectoryListing(_reRequestInfo.UriPath, parentPath, infos),
-                                                      false);
+            string bodyString = Messages.FormatDirectoryListing(_reRequestInfo.UriPath, parentPath, infos);
+            int bodyLength = (bodyString != null) ? System.Text.Encoding.UTF8.GetByteCount(bodyString) : 0;
+            string headers = ResponseParse.MakeResponseHeaders(200, "Content-type: text/html; charset=utf-8\r\n", bodyLength, _reRequestInfo.IsKeepAlive);
+
+            _iocpChannelConnector.WriteEntireResponseFromString(_reRequestInfo.AcceptSocket, headers + Messages.FormatDirectoryListing(_reRequestInfo.UriPath, parentPath, infos));
             return true;
+        }
+
+        private byte[] MergeByteArray(List<byte[]> responseBodyBytes)
+        {
+            byte[] bodyBytes;
+            long bodyLen = 0;
+            foreach (byte[] bytes in responseBodyBytes)
+            {
+                bodyLen += bytes.Length;
+            }
+            bodyBytes = new byte[bodyLen];
+            long bodyIndex = 0;
+            foreach (byte[] bytes in responseBodyBytes)
+            {
+                Array.Copy(bytes, 0, bodyBytes, bodyIndex, bytes.Length);
+                bodyIndex += bytes.Length;
+            }
+            return bodyBytes;
         }
 
         /// <summary>
@@ -149,32 +170,22 @@ namespace NG3.AppServer.Handler
 
             if (!_headersSent)
             {
-                _iocpChannelConnector.WriteHeaders(_reRequestInfo.AcceptSocket,_responseStatus, _responseHeadersBuilder.ToString());
-
+                string headerString = ResponseParse.MakeResponseHeaders(_responseStatus, _responseHeadersBuilder.ToString(), -1, _reRequestInfo.IsKeepAlive);
+                _iocpChannelConnector.WriteHeaders(_reRequestInfo.AcceptSocket, headerString);
                 _headersSent = true;
             }
 
-            byte[] bodyBytes;
-            long bodyLen = 0;
-            foreach (byte[] bytes in _responseBodyBytes)
-            {
-                bodyLen += bytes.Length;
-            }
-            bodyBytes = new byte[bodyLen];
-            long bodyIndex = 0;
-            foreach (byte[] bytes in _responseBodyBytes)
-            {
-                Array.Copy(bytes,0,bodyBytes,bodyIndex,bytes.Length);
-                bodyIndex += bytes.Length;
-            }
+            byte[] bodyBytes = MergeByteArray(_responseBodyBytes);
             byte[] gzipBytes = ResponseParse.EncodingBodyContent(bodyBytes);
             _iocpChannelConnector.WriteBody(_reRequestInfo.AcceptSocket, gzipBytes, 0, gzipBytes.Length);
+
 
             _responseBodyBytes = new List<byte[]>();
 
             if (finalFlush)
             {
-                _iocpChannelConnector.Close(_reRequestInfo.AcceptSocket);
+                if(!_reRequestInfo.IsKeepAlive)
+                    _iocpChannelConnector.Close(_reRequestInfo.AcceptSocket);
             }
         }
 

@@ -14,6 +14,7 @@ namespace NG3.AppServer.Connector
     abstract class AbstractConnector : MarshalByRefObject
     {
         protected const int MaxHeaderBytes = 32 * 1024;
+        private const int MaxSendBytes = 548;
 
         private int _listenMaxConnections = 0;
 
@@ -123,9 +124,8 @@ namespace NG3.AppServer.Connector
             }
         }
 
-        public virtual void WriteHeaders(SocketProxy acceptSocket, int statusCode, String extraHeaders)
+        public virtual void WriteHeaders(SocketProxy acceptSocket,string headers)
         {
-            string headers = ResponseParse.MakeResponseHeaders(statusCode, extraHeaders, -1, false);
             try
             {
                 acceptSocket.Send(Encoding.UTF8.GetBytes(headers));
@@ -140,7 +140,20 @@ namespace NG3.AppServer.Connector
         {
             try
             {
-                acceptSocket.Send(data, offset, length, SocketFlags.None);
+                int sendNum = length/MaxSendBytes;
+                if(sendNum == 0)
+                    acceptSocket.Send(data, offset, length, SocketFlags.None);
+                else
+                {
+                    int modNum = length%MaxSendBytes;
+                    int sendIndex = 0;
+                    for (int i = 0; i < sendNum; i++)
+                    {
+                        acceptSocket.Send(data, sendIndex, MaxSendBytes, SocketFlags.None);
+                        sendIndex += MaxSendBytes;
+                    }
+                    acceptSocket.Send(data, sendIndex, modNum, SocketFlags.None);
+                }
             }
             catch (Exception ex)
             {
@@ -148,15 +161,12 @@ namespace NG3.AppServer.Connector
             }
         }
 
-        public virtual void WriteEntireResponseFromString(SocketProxy acceptSocket, int statusCode, String extraHeaders, String body, bool keepAlive)
+        public virtual void WriteEntireResponseFromString(SocketProxy acceptSocket, string content)
         {
             try
             {
-                int bodyLength = (body != null) ? Encoding.UTF8.GetByteCount(body) : 0;
-                string headers = ResponseParse.MakeResponseHeaders(statusCode, extraHeaders, bodyLength, keepAlive);
-
                 if (acceptSocket != null)
-                    acceptSocket.Send(Encoding.UTF8.GetBytes(headers + body));
+                    acceptSocket.Send(Encoding.UTF8.GetBytes(content));
             }
             catch (Exception ex)
             {

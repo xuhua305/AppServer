@@ -180,6 +180,13 @@ namespace NG3.AppServer.Parse
             set { _connection = value; }
         }
 
+        private bool _isKeepAlive = false;
+        public bool IsKeepAlive
+        {
+            get { return _isKeepAlive; }
+            set { _isKeepAlive = value; }
+        }
+
         private string _cookie = string.Empty;
         public string Cookie
         {

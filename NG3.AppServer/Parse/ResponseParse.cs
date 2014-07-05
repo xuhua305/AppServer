@@ -45,6 +45,7 @@ namespace NG3.AppServer.Parse
             {
                 IResponseEncoding responseEncoding = new ResponseEncodingFactory().CreateResponseEncoding();
                 return responseEncoding.EncodingResponse(bodyBytes);
+                //return bodyBytes;
             }
             catch (Exception ex)
             {
