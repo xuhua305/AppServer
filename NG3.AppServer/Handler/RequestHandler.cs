@@ -131,7 +131,8 @@ namespace NG3.AppServer.Handler
             int bodyLength = (bodyString != null) ? System.Text.Encoding.UTF8.GetByteCount(bodyString) : 0;
             string headers = ResponseParse.MakeResponseHeaders(200, "Content-type: text/html; charset=utf-8\r\n", bodyLength, _reRequestInfo.IsKeepAlive);
 
-            _iocpChannelConnector.WriteEntireResponseFromString(_reRequestInfo.AcceptSocket, headers + Messages.FormatDirectoryListing(_reRequestInfo.UriPath, parentPath, infos));
+            _iocpChannelConnector.WriteEntireResponseFromString(_reRequestInfo.AcceptSocket, 
+                headers + Messages.FormatDirectoryListing(_reRequestInfo.UriPath, parentPath, infos),_reRequestInfo.IsKeepAlive);
             return true;
         }
 

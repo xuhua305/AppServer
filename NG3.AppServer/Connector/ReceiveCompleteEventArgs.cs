@@ -14,9 +14,18 @@ namespace NG3.AppServer.Connector
             set { _token = value; }
         }
 
-        public ReceiveCompleteEventArgs(Token token)
+        private bool _isKeepAlive = false;
+
+        public bool IsKeepAlive
+        {
+            get { return _isKeepAlive; }
+            set { _isKeepAlive = value; }
+        }
+
+        public ReceiveCompleteEventArgs(Token token,bool isKeepAlive)
         {
             _token = token;
+            _isKeepAlive = isKeepAlive;
         }
     }
 }

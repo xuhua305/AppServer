@@ -51,7 +51,7 @@ namespace NG3.AppServer.Connector
             _port = port;
             _address = address;
 
-            _semaphoreAcceptedClients = new Semaphore(ListenMaxConnections, ListenMaxConnections);
+            //_semaphoreAcceptedClients = new Semaphore(ListenMaxConnections, ListenMaxConnections);
             _readWritePool = new SocketAsyncEventArgsPool(ListenMaxConnections);
 
             // Preallocate pool of SocketAsyncEventArgs objects.
@@ -102,7 +102,7 @@ namespace NG3.AppServer.Connector
                 acceptEventArg.AcceptSocket = null;
             }
 
-            _semaphoreAcceptedClients.WaitOne();
+            //_semaphoreAcceptedClients.WaitOne();
             if (!_listenSocket.AcceptAsync(acceptEventArg))
             {
                 this.ProcessAccept(acceptEventArg);
@@ -159,23 +159,24 @@ namespace NG3.AppServer.Connector
         /// Close the socket associated with the client.
         /// </summary>
         /// <param name="e">SocketAsyncEventArg associated with the completed send/receive operation.</param>
-        private void CloseClientSocket(SocketAsyncEventArgs e)
+        private void CloseClientSocket(SocketAsyncEventArgs e,bool isKeepAlive)
         {
             Token token = e.UserToken as Token;
-            this.CloseClientSocket(token, e);
+            this.CloseClientSocket(token, e,isKeepAlive);
         }
 
-        private void CloseClientSocket(Token token, SocketAsyncEventArgs e)
+        private void CloseClientSocket(Token token, SocketAsyncEventArgs e,bool isKeepAlive)
         {
             token.Dispose();
 
             // Decrement the counter keeping track of the total number of clients connected to the server.
-            _semaphoreAcceptedClients.Release();
+            //_semaphoreAcceptedClients.Release();
             //Interlocked.Decrement(ref this.numConnectedSockets);
             //Console.WriteLine("A client has been disconnected from the server. There are {0} clients connected to the server", this.numConnectedSockets);
 
             // Free the SocketAsyncEventArg so they can be reused by another client.
-            _readWritePool.Push(e);
+            if(!isKeepAlive)
+                _readWritePool.Push(e);
         }
 
         /// <summary>
@@ -197,11 +198,12 @@ namespace NG3.AppServer.Connector
                     Socket s = token.Connection;
                     if (s.Available == 0)
                     {
+                        ReceiveCompleteEventArgs receiveCompleteEventArgs = new ReceiveCompleteEventArgs(token,false);
                         if(ReceiveCompleted != null)
                         {
-                            ReceiveCompleted(null, new ReceiveCompleteEventArgs(token));
+                            ReceiveCompleted(null, receiveCompleteEventArgs);
                         }
-                        this.CloseClientSocket(e);
+                        this.CloseClientSocket(e,receiveCompleteEventArgs.IsKeepAlive);
                     }
                     else if (!s.ReceiveAsync(e))
                     {
@@ -216,7 +218,7 @@ namespace NG3.AppServer.Connector
             }
             else
             {
-                this.CloseClientSocket(e);
+                this.CloseClientSocket(e,false);
             }
         }
 
@@ -250,7 +252,7 @@ namespace NG3.AppServer.Connector
             Token token = e.UserToken as Token;
             IPEndPoint localEp = token.Connection.LocalEndPoint as IPEndPoint;
 
-            this.CloseClientSocket(token, e);
+            this.CloseClientSocket(token, e,false);
 
             Console.WriteLine("Socket error {0} on endpoint {1} during {2}.", (Int32)e.SocketError, localEp, e.LastOperation);
         }

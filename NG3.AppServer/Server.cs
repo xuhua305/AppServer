@@ -50,7 +50,7 @@ namespace NG3.AppServer
 
         void OnReceiveCompleted(object sender, ReceiveCompleteEventArgs e)
         {
-            ProcessRequest(e.Token);
+            ProcessRequest(e);
         }
 
         public void HostStopped()
@@ -58,11 +58,11 @@ namespace NG3.AppServer
             _host = null;
         }
 
-        private void ProcessRequest(object obj)
+        private void ProcessRequest(ReceiveCompleteEventArgs receiveCompleteEventArgs)
         {
             try
             {
-                Token token = obj as Token;
+                Token token = receiveCompleteEventArgs.Token;
                 if (token == null)
                 {
 
@@ -70,6 +70,7 @@ namespace NG3.AppServer
                 }
 
                 RequestInfo requestInfo = RequestParse.Parse(token);
+                receiveCompleteEventArgs.IsKeepAlive = requestInfo.IsKeepAlive;
 
                 HostManager hostManager = new HostManager(_pathInfos);
                 int index = -1;

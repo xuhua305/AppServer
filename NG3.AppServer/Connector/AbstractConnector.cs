@@ -161,7 +161,7 @@ namespace NG3.AppServer.Connector
             }
         }
 
-        public virtual void WriteEntireResponseFromString(SocketProxy acceptSocket, string content)
+        public virtual void WriteEntireResponseFromString(SocketProxy acceptSocket, string content, bool isKeepAlive)
         {
             try
             {
@@ -176,7 +176,7 @@ namespace NG3.AppServer.Connector
             {
                 if (acceptSocket != null)
                 {
-                    if (!keepAlive)
+                    if (!isKeepAlive)
                     {
                         Close(acceptSocket);
                     }
